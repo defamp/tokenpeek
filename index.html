@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tokenpeek — JWT &amp; Token Security Analyzer</title>
+<meta name="description" content="Decode JWTs and flag security weaknesses — alg=none, weak HMAC secrets, key injection, sensitive data, expiry. 100% client-side, nothing leaves your browser.">
+<meta name="author" content="Defa Mulya Pratama">
+<meta property="og:type" content="website">
+<meta property="og:title" content="tokenpeek — JWT &amp; Token Security Analyzer">
+<meta property="og:description" content="Decode JWTs and flag security weaknesses, entirely in your browser.">
+<meta property="og:url" content="https://defamp.github.io/tokenpeek/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">🔑 <span>tokenpeek</span></div>
+  <a class="gh" href="https://github.com/defamp/tokenpeek" target="_blank" rel="noopener">GitHub ↗</a>
+</header>
+
+<main class="wrap">
+  <h1>JWT &amp; Token Security Analyzer</h1>
+  <p class="sub">Paste a JSON Web Token to decode it and surface security weaknesses —
+    <code>alg=none</code>, weak HMAC secrets, key-injection headers, sensitive data, expiry.
+    <strong>Everything runs in your browser. The token never leaves your device.</strong>
+  </p>
+
+  <section class="card">
+    <div class="input-head">
+      <label for="token">Token</label>
+      <div class="input-actions">
+        <button id="sample" class="btn-ghost" type="button">Paste sample</button>
+        <button id="clear" class="btn-ghost" type="button">Clear</button>
+      </div>
+    </div>
+    <textarea id="token" spellcheck="false" autocomplete="off"
+      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0In0.xxxxx"></textarea>
+    <div id="errors" class="errors" hidden></div>
+  </section>
+
+  <div id="results" hidden>
+    <div id="verdict" class="verdict"></div>
+
+    <section class="card decoded">
+      <h2>Decoded</h2>
+      <div class="segments">
+        <div class="seg seg-h"><h3>Header</h3><pre id="header"></pre></div>
+        <div class="seg seg-p"><h3>Payload</h3><pre id="payload"></pre></div>
+        <div class="seg seg-s"><h3>Signature</h3><pre id="signature"></pre></div>
+      </div>
+    </section>
+
+    <section class="card" id="findings-card">
+      <h2>Security findings <span id="findings-count" class="pill"></span></h2>
+      <div id="findings"></div>
+    </section>
+
+    <section class="card" id="claims-card">
+      <h2>Claims</h2>
+      <table class="claims"><thead><tr><th>Claim</th><th>Value</th><th>When</th></tr></thead>
+        <tbody id="claims"></tbody></table>
+    </section>
+
+    <section class="card" id="sig-card">
+      <h2>Signature check</h2>
+      <div id="hs-check" hidden>
+        <p class="muted">This token uses an HMAC algorithm (<code id="hs-alg"></code>). Test whether it was signed with a common/weak secret:</p>
+        <button id="crack" class="btn" type="button">🔓 Try common secrets</button>
+        <div class="verify-inline">
+          <input id="secret" type="text" placeholder="…or verify with a specific secret" autocomplete="off">
+          <button id="verify-hs" class="btn-ghost" type="button">Verify</button>
+        </div>
+        <div id="hs-result" class="sig-result"></div>
+      </div>
+      <div id="asym-check" hidden>
+        <p class="muted">This token uses an asymmetric algorithm (<code id="asym-alg"></code>). Paste the signer's <strong>public key</strong> (PEM) to verify:</p>
+        <textarea id="pubkey" spellcheck="false" placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"></textarea>
+        <button id="verify-asym" class="btn" type="button">Verify signature</button>
+        <div id="asym-result" class="sig-result"></div>
+      </div>
+      <div id="nosig-check" hidden><p class="muted">No signing algorithm to verify.</p></div>
+    </section>
+  </div>
+
+  <p class="privacy">🔒 100% client-side · no network requests · no analytics · open source.</p>
+</main>
+
+<footer class="foot">
+  <span>Built by <a href="https://defamp.github.io" target="_blank" rel="noopener">Defa Mulya Pratama</a></span>
+  <span>·</span>
+  <a href="https://github.com/defamp/tokenpeek" target="_blank" rel="noopener">Source</a>
+</footer>
+
+<script src="js/wordlist.js"></script>
+<script src="js/analyzer.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
