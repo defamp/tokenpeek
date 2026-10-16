@@ -10,14 +10,11 @@
 <meta property="og:title" content="tokenpeek — JWT &amp; Token Security Analyzer">
 <meta property="og:description" content="Decode JWTs and flag security weaknesses, entirely in your browser.">
 <meta property="og:url" content="https://defamp.github.io/tokenpeek/">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 <header class="topbar">
-  <div class="brand">🔑 <span>tokenpeek</span></div>
+  <div class="brand">🔑 <span>tokenpeek</span> <small>v1.1.0</small></div>
   <a class="gh" href="https://github.com/defamp/tokenpeek" target="_blank" rel="noopener">GitHub ↗</a>
 </header>
 
@@ -38,11 +35,25 @@
     </div>
     <textarea id="token" spellcheck="false" autocomplete="off"
       placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0In0.xxxxx"></textarea>
+    <fieldset class="expected-inputs">
+      <legend>Expected claims (optional)</legend>
+      <label for="expected-issuer">Expected issuer (iss)</label>
+      <input id="expected-issuer" type="text" placeholder="https://issuer.example" autocomplete="off" spellcheck="false">
+      <label for="expected-audience">Expected audience (aud)</label>
+      <input id="expected-audience" type="text" placeholder="my-api" autocomplete="off" spellcheck="false">
+      <p class="muted">Exact, case-sensitive comparison. Leave blank to skip; values are not saved.</p>
+    </fieldset>
     <div id="errors" class="errors" hidden></div>
   </section>
 
   <div id="results" hidden>
     <div id="verdict" class="verdict"></div>
+
+    <section class="card" aria-labelledby="expected-claims-heading">
+      <h2 id="expected-claims-heading">Expected claim checks</h2>
+      <p class="muted">Compares decoded claims only. A match does not verify the signature or establish token validity. See Signature check below.</p>
+      <div id="expected-claim-results" aria-live="polite"></div>
+    </section>
 
     <section class="card decoded">
       <h2>Decoded</h2>

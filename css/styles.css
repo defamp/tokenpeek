@@ -112,5 +112,16 @@ textarea:focus { outline:none; border-color:var(--accent); }
 .sig-ok { color:var(--accent2); } .sig-bad { color:var(--red); } .sig-cracked { color:var(--red); font-weight:700; }
 .muted { color:var(--muted); }
 
+.expected-inputs { margin:14px 0 0; padding:12px; border:1px solid var(--border); border-radius:8px; min-width:0; }
+.expected-inputs legend { color:var(--muted); padding:0 6px; }
+.expected-inputs label { display:block; margin:8px 0 4px; }
+.expected-inputs input { width:100%; min-width:0; background:#0b0f1c; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px; font:inherit; }
+.expected-inputs input:focus { outline:2px solid var(--accent); outline-offset:2px; }
+.expected-check { padding:12px 0; border-top:1px solid var(--border); overflow-wrap:anywhere; }
+.expected-check p { margin-bottom:0; }
+.claim-status { padding:2px 8px; border-radius:5px; }
+.claim-match { color:var(--accent2); background:#0d2a1e; }
+.claim-mismatch,.claim-missing,.claim-invalid { color:var(--yellow); background:#2a2410; }
+
 .privacy { text-align:center; color:var(--muted); font-size:.85rem; margin-top:10px; }
 .foot { text-align:center; color:var(--muted); font-size:.85rem; padding:24px 16px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:center; }

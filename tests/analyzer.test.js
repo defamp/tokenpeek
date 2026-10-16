@@ -84,3 +84,92 @@ test("findings are sorted by severity", () => {
   const sev = r.findings.map((f) => TP.ORDER[f.severity]);
   for (let i = 1; i < sev.length; i++) assert.ok(sev[i - 1] >= sev[i]);
 });
+
+// RFC 7519 section 4.1: comparisons are exact and case-sensitive.
+test("expected claims are opt-in and preserve existing findings/verdict", () => {
+  const token = mk({alg: "HS256"}, {iss: "issuer", aud: "api", exp: 9999999999});
+  const before = TP.analyze(token, 1700000000000);
+  const after = TP.analyze(token, 1700000000000, {issuer: "other", audience: "other"});
+  assert.deepStrictEqual(before.expectedClaims, []);
+  assert.deepStrictEqual(after.findings, before.findings);
+  assert.strictEqual(after.verdict, before.verdict);
+  assert.deepStrictEqual(after.expectedClaims.map(c => c.status), ["mismatch", "mismatch"]);
+});
+
+test("matching issuer and string audience", () => {
+  const checks = TP.checkExpectedClaims({iss: "https://id.example", aud: "api"},
+    {issuer: "https://id.example", audience: "api"});
+  assert.deepStrictEqual(checks.map(c => c.status), ["match", "match"]);
+});
+
+test("audience list accepts an exact member", () => {
+  const check = TP.checkExpectedClaims({aud: ["web", "api"]}, {audience: "api"})[0];
+  assert.strictEqual(check.status, "match");
+  assert.match(check.detail, /signature verification is separate/);
+});
+
+test("audience membership is not substring matching", () => {
+  for (const aud of ["api-admin", ["api-admin"], []]) {
+    assert.strictEqual(TP.checkExpectedClaims({aud}, {audience: "api"})[0].status, "mismatch");
+  }
+});
+
+test("issuer comparison does not normalize case, slash or whitespace", () => {
+  for (const iss of ["https://ID.example", "https://id.example/", " https://id.example"]) {
+    assert.strictEqual(TP.checkExpectedClaims({iss}, {issuer: "https://id.example"})[0].status, "mismatch");
+  }
+});
+
+test("audience comparison preserves case and whitespace", () => {
+  for (const aud of ["API", "api ", ["API"]]) {
+    assert.strictEqual(TP.checkExpectedClaims({aud}, {audience: "api"})[0].status, "mismatch");
+  }
+});
+
+test("missing expected claims are explicit", () => {
+  const checks = TP.checkExpectedClaims({}, {issuer: "issuer", audience: "api"});
+  assert.deepStrictEqual(checks.map(c => c.status), ["missing", "missing"]);
+});
+
+test("wrong issuer types do not coerce into a match", () => {
+  for (const iss of [null, 123, true, ["issuer"], {value: "issuer"}]) {
+    assert.strictEqual(TP.checkExpectedClaims({iss}, {issuer: "issuer"})[0].status, "invalid");
+  }
+});
+
+test("wrong audience types and mixed arrays are invalid", () => {
+  for (const aud of [null, 123, true, {value: "api"}, ["api", 123], [null, "api"]]) {
+    assert.strictEqual(TP.checkExpectedClaims({aud}, {audience: "api"})[0].status, "invalid");
+  }
+});
+
+test("malformed payloads cannot produce a matching check", () => {
+  for (const payload of [null, "api", 123, ["api"]]) {
+    assert.strictEqual(TP.checkExpectedClaims(payload, {audience: "api"})[0].status, "invalid");
+  }
+  const invalid = TP.analyze("not.a.token", undefined, {issuer: "issuer"});
+  assert.strictEqual(invalid.expectedClaims[0].status, "invalid");
+});
+
+test("blank expectations skip comparisons", () => {
+  assert.deepStrictEqual(TP.checkExpectedClaims({}, {issuer: "", audience: ""}), []);
+  assert.deepStrictEqual(TP.checkExpectedClaims({}), []);
+});
+
+test("non-string expectations fail clearly", () => {
+  assert.throws(() => TP.checkExpectedClaims({}, {issuer: 123}), TypeError);
+  assert.throws(() => TP.checkExpectedClaims({}, {audience: ["api"]}), TypeError);
+});
+
+test("claims must belong to the payload itself", () => {
+  const checks = TP.checkExpectedClaims(Object.create({iss: "issuer", aud: "api"}),
+    {issuer: "issuer", audience: "api"});
+  assert.deepStrictEqual(checks.map(c => c.status), ["missing", "missing"]);
+});
+
+test("matching claims do not override an unsigned token verdict", () => {
+  const r = TP.analyze(mk({alg: "none"}, {iss: "issuer", aud: "api"}, ""), undefined,
+    {issuer: "issuer", audience: "api"});
+  assert.strictEqual(r.verdict, "CRITICAL");
+  assert.deepStrictEqual(r.expectedClaims.map(c => c.status), ["match", "match"]);
+});

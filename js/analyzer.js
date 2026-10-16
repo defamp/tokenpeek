@@ -182,6 +182,40 @@
 
   var ORDER = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 
+  // Context checks are separate from security findings and signature checks.
+  function checkExpectedClaims(payload, expectations) {
+    expectations = expectations || {};
+    var checks = [];
+    [ ["issuer", "iss"], ["audience", "aud"] ].forEach(function (pair) {
+      var expected = expectations[pair[0]], claim = pair[1];
+      if (expected === undefined || expected === null || expected === "") return;
+      if (typeof expected !== "string") throw new TypeError("Expected " + pair[0] + " must be a string");
+      var check = { claim: claim, expected: expected, status: "mismatch", detail: "" };
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+        check.status = "invalid";
+        check.detail = "Payload is not a readable JSON object.";
+      } else if (!Object.prototype.hasOwnProperty.call(payload, claim)) {
+        check.status = "missing";
+        check.detail = "The token does not contain the expected " + claim + " claim.";
+      } else {
+        var actual = payload[claim];
+        var valid = typeof actual === "string" || (claim === "aud" && Array.isArray(actual) &&
+          actual.every(function (value) { return typeof value === "string"; }));
+        if (!valid) {
+          check.status = "invalid";
+          check.detail = claim === "iss" ? "iss must be a string." : "aud must be a string or an array of strings.";
+        } else {
+          var matches = Array.isArray(actual) ? actual.indexOf(expected) >= 0 : actual === expected;
+          check.status = matches ? "match" : "mismatch";
+          check.detail = matches ? "Claim matches the expected value; signature verification is separate."
+            : "Claim does not match the expected value (exact, case-sensitive comparison).";
+        }
+      }
+      checks.push(check);
+    });
+    return checks;
+  }
+
   function verdict(f) {
     if (!f.length) return "OK";
     var top = f.reduce(function (m, x) { return Math.max(m, ORDER[x.severity] || 0); }, 0);
@@ -192,7 +226,7 @@
     return "OK";
   }
 
-  function analyze(token, now) {
+  function analyze(token, now, expectations) {
     var parsed = parseJwt(token);
     var f = parsed.errors.length && !parsed.header ? [] : findings(parsed, now);
     // Sort most-severe first.
@@ -202,6 +236,7 @@
       claims: analyzeClaims(parsed.payload, now),
       findings: f,
       verdict: verdict(f),
+      expectedClaims: checkExpectedClaims(parsed.payload, expectations),
     };
   }
 
@@ -213,6 +248,7 @@
     verdict: verdict,
     analyze: analyze,
     ORDER: ORDER,
+    checkExpectedClaims: checkExpectedClaims,
   };
 
   if (typeof module !== "undefined" && module.exports) module.exports = api;

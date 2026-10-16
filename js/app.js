@@ -33,7 +33,10 @@
     var errBox = $("errors"), results = $("results");
     if (!token.trim()) { results.hidden = true; errBox.hidden = true; return; }
 
-    var r = window.TokenPeek.analyze(token);
+    var r = window.TokenPeek.analyze(token, undefined, {
+      issuer: $("expected-issuer").value,
+      audience: $("expected-audience").value,
+    });
     if (r.parsed.errors.length) {
       errBox.hidden = false;
       errBox.textContent = "⚠ " + r.parsed.errors.join(" · ");
@@ -42,6 +45,13 @@
       errBox.hidden = true;
     }
     results.hidden = false;
+
+    $("expected-claim-results").innerHTML = r.expectedClaims.length ? r.expectedClaims.map(function (check) {
+      return '<div class="expected-check"><strong>' + esc(check.claim) + '</strong> ' +
+        '<span class="claim-status claim-' + check.status + '">' + check.status + '</span>' +
+        '<div>Expected: <code>' + esc(check.expected) + '</code></div>' +
+        '<p class="muted">' + esc(check.detail) + '</p></div>';
+    }).join("") : '<p class="muted">Enter an expected issuer or audience above to compare claims.</p>';
 
     // verdict
     var v = $("verdict");
@@ -137,8 +147,16 @@
   document.addEventListener("DOMContentLoaded", function () {
     var ta = $("token");
     ta.addEventListener("input", function () { render(ta.value); });
+    ["expected-issuer", "expected-audience"].forEach(function (id) {
+      $(id).addEventListener("input", function () { render(ta.value); });
+    });
     $("sample").addEventListener("click", function () { ta.value = SAMPLE; render(SAMPLE); });
-    $("clear").addEventListener("click", function () { ta.value = ""; render(""); ta.focus(); });
+    $("clear").addEventListener("click", function () {
+      ta.value = "";
+      $("expected-issuer").value = "";
+      $("expected-audience").value = "";
+      render(""); ta.focus();
+    });
 
     $("crack").addEventListener("click", async function () {
       var out = $("hs-result");
